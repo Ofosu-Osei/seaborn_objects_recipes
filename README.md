@@ -4,7 +4,11 @@
 
 ## About
 
-seaborn_objects_recipes is a Python package that extends the functionality of the Seaborn library, providing custom recipes for enhanced data visualization. This package includes features like [Rolling](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/rolling.py), [LineLabel](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/line_label.py), and [Lowess](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/lowess.py) to augment your Seaborn plots with additional capabilities.
+seaborn_objects_recipes is a Python package that extends the functionality of the Seaborn library, providing custom recipes for enhanced data visualization. This package includes features like
+* [Rolling](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/rolling.py)
+* [LineLabel](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/line_label.py)
+* [Lowess](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/lowess.py) 
+to augment your Seaborn plots with additional capabilities.
 
 ## Installation
 
@@ -56,11 +60,11 @@ sor.Lowess()
 
 ### Rollig and LineLabel in action:
 
-[!fimage](img/line_label.png)
+![fimage](img/line_label.png)
 
 ### Lowess in action
 
-[!simage](img/lowess.png)
+![simage](img/lowess.png)
 
 ## Contact
 
