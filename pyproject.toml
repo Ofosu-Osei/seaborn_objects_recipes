@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "seaborn-objects-recipes"
+version = "0.1.0"
+description = "A collection of recipes that can be used together with the seaborn library to create custom plots."
+authors = ["Ofosu Osei <goofosuosei@email.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

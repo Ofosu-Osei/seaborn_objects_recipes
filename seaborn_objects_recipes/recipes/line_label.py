@@ -1,9 +1,9 @@
 import dataclasses
-import operator
 from typing import ClassVar, Any, Mapping
 import logging
 import matplotlib as mpl
-from matplotlib import collections
+#from matplotlib import collections
+import collections
 import pandas as pd
 import numpy as np
 import scipy.optimize
