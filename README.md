@@ -117,7 +117,7 @@ def test_lowess(cleanup_files):
 
 ### Output
 
-![simage](img/lowess.png)
+![simage](img/lowessgen.png)
 
 ### Lowess with Pinguins Dataset
 
