@@ -2,7 +2,6 @@ import dataclasses
 from typing import ClassVar, Any, Mapping
 import logging
 import matplotlib as mpl
-#from matplotlib import collections
 import collections
 import pandas as pd
 import numpy as np
