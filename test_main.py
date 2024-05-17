@@ -35,8 +35,16 @@ def cleanup_files():
     # Cleanup code to delete files after test runs
     if os.path.exists("line_label.png"):
         os.remove("line_label.png")
-    if os.path.exists("lowess.png"):
-        os.remove("lowess.png")
+    if os.path.exists("lowess_b.png"):
+        os.remove("lowess_b.png")
+    if os.path.exists("lowess_gen.png"):
+        os.remove("lowess_gen.png")
+    if os.path.exists("lowess_nb.png"):
+        os.remove("lowess_nb.png")
+    if os.path.exists("reg_with_ci.png"):
+        os.remove("reg_with_ci.png")
+    if os.path.exists("polyfit_with_ci.png"):
+        os.remove("polyfit_with_ci.png")
 
 
 # Use the sample_data fixture to provide data to the test function
@@ -82,17 +90,17 @@ def test_line_label(sample_data, cleanup_files):
     ), "The plot file line_label.png was not created."
 
 
-def test_lowess(cleanup_files):
+def test_lowess_with_ci_gen(cleanup_files):
     # Generate data for testing
     np.random.seed(0)
     x = np.linspace(0, 2 * np.pi, 100)
     y = np.sin(x) + np.random.normal(size=100) * 0.2
     data = pd.DataFrame({"x": x, "y": y})
 
-    # Initialize LOWESS instance
-    lowess = sor.Lowess(frac=0.4)
+    # Initialize LOWESS instance with bootstrapping
+    lowess = sor.Lowess(frac=0.2, gridsize=100, num_bootstrap=200, alpha=0.95)
     # Call the LOWESS method on prepared data
-    results = lowess(data)
+    results = lowess(data, xvar="x", yvar="y")
 
     fig, ax = plt.subplots(figsize=(9, 5))
 
@@ -114,74 +122,129 @@ def test_lowess(cleanup_files):
 
     # Add gridlines
     ax.grid(True, which="both", color="gray", linewidth=0.5, linestyle="--")
-    plt.savefig("lowess.png")
+    plt.savefig("lowess_gen.png")
     # plt.show()
 
     # Assert that the file was created
-    assert os.path.exists("lowess.png"), "The plot file lowess.png was not created."
+    assert os.path.exists("lowess_gen.png"), "The plot file lowess.png was not created."
 
 
-def test_lowess_(cleanup_files):
-    # Load Penguins dataset
-    data = sns.load_dataset("penguins")
+def test_lowess_with_ci(cleanup_files):
+    # Load the penguins dataset
+    penguins = sns.load_dataset("penguins")
 
-    # Prepare data for 'x' and 'y'
-    data = data.rename(columns={"bill_length_mm": "x", "body_mass_g": "y"})
+    # Prepare data
+    data = penguins[penguins['species'] == 'Adelie']
 
-    # Filter data for instance:
-    data = data[data["species"] == "Adelie"]
-
-    # Initialize LOWESS instance
-    lowess = sor.Lowess(frac=0.4)
+    # Initialize LOWESS instance with bootstrapping
+    lowess_with_bootstrap = sor.Lowess(frac=0.9, gridsize=100, num_bootstrap=200, alpha=0.95)
 
     # Call the LOWESS method on prepared data
-    results = lowess(data)
+    results_with_bootstrap = lowess_with_bootstrap(data, xvar ='bill_length_mm', yvar='body_mass_g')
 
+    # Plotting
     fig, ax = plt.subplots(figsize=(9, 5))
-
-    # Scatter plot of the raw data
-    sns.scatterplot(x="x", y="y", data=data, ax=ax, color="blue", alpha=0.5)
-
-    # LOWESS smoothed line
-    ax.plot(results["x"], 
-            results["y"], 
-            color="darkblue"
+    sns.scatterplot(x='bill_length_mm', y='body_mass_g', data=data, ax=ax, color='blue', alpha=0.5)
+    ax.plot(results_with_bootstrap['bill_length_mm'], results_with_bootstrap['body_mass_g'], color='darkblue')
+    ax.fill_between(results_with_bootstrap['bill_length_mm'], 
+                    results_with_bootstrap['ci_lower'], 
+                    results_with_bootstrap['ci_upper'], 
+                    color='blue', 
+                    alpha=0.3
     )
-
-    # Confidence interval shading
-    ax.fill_between(
-        results["x"], 
-        results["ci_lower"], 
-        results["ci_upper"], 
-        color="blue", 
-        alpha=0.3
-    )
-    # Customizing plot
-    ax.set_xlabel("Bill Length (mm)")
-    ax.set_ylabel("Body Mass (g)")
-    ax.set_title("LOWESS Smoothing with Confidence Intervals for Adelie Penguins")
-    # Add gridlines
-    ax.grid(True, which="both", color="gray", linewidth=0.5, linestyle="--")
+    ax.set_xlabel('Bill Length (mm)')
+    ax.set_ylabel('Body Mass (g)')
+    ax.set_title('LOWESS Smoothing with Confidence Intervals for Adelie Penguins')
+    ax.grid(True, which='both', color='gray', linewidth=0.5, linestyle='--')
     #plt.show()
-    plt.savefig("lowess_.png")
+    plt.savefig("lowess_b.png")
 
     # Assert that the file was created
-    assert os.path.exists("lowess_.png"), "The plot file lowess.png was not created."
+    assert os.path.exists("lowess_b.png"), "The plot file lowess.png was not created."
 
-def test_regression_w_ci(cleanup_files):
-    # Load Penguins dataset
+
+
+def test_lowess_with_no_ci(cleanup_files):
+    # Load the penguins dataset
+    penguins = sns.load_dataset("penguins")
+
+    # Prepare data
+    data = penguins[penguins['species'] == 'Adelie']
+
+    # Initialize LOWESS instance (no bootstrapping)
+    lowess_no_bootstrap = sor.Lowess(frac=0.5, gridsize=100)
+
+    # Call the LOWESS method on prepared data
+    results_no_bootstrap = lowess_no_bootstrap(data, xvar ='bill_length_mm', yvar='body_mass_g')
+
+    # Plotting
+    fig, ax = plt.subplots(figsize=(9, 5))
+    sns.scatterplot(x='bill_length_mm', y='body_mass_g', data=data, ax=ax, color='blue', alpha=0.5)
+    ax.plot(results_no_bootstrap['bill_length_mm'], results_no_bootstrap['body_mass_g'], color='darkblue')
+    ax.set_xlabel('Bill Length (mm)')
+    ax.set_ylabel('Body Mass (g)')
+    ax.set_title('LOWESS Smoothing for Adelie Penguins (No Bootstrapping)')
+    ax.grid(True, which='both', color='gray', linewidth=0.5, linestyle='--')
+    #plt.show()
+    plt.savefig("lowess_nb.png")
+
+    # Assert that the file was created
+    assert os.path.exists("lowess_nb.png"), "The plot file lowess.png was not created."
+
+
+def test_regression_with_ci(cleanup_files):
+    # Load the penguins dataset
     penguins = sns.load_dataset("penguins")
 
     # Create an instance of the class
-    regression_plot = sor.RegressionWithCI(alpha=0.05, include_dots=True)
+    regression_plot = sor.PolyFitCI(order=2, gridsize=100, alpha=0.05)
 
     plot = regression_plot.plot(
         penguins[penguins.species == "Adelie"], xvar="bill_length_mm", yvar="body_mass_g"
     )
 
-    plot.label(x = "Bill Length (mm)", y = "Body Mass (g)")
-    plot.save("regression_w_ci.png")
-    #plot.show()
+    plot = (
+        plot
+        .add(so.Dots(), y="body_mass_g")
+        .label(x="Bill Length (mm)", y="Body Mass (g)")
+    )
+    
+    plot.save("reg_with_ci.png")
+    #plt.show()
 
     # Assert that the file was created
-    assert os.path.exists("regression_w_ci.png"), "The plot file lowess.png was not created."
+    assert os.path.exists("reg_with_ci.png"), "The plot file lowess.png was not created."
+
+
+def test_polyfit_with_ci(cleanup_files):
+    # Load the penguins dataset
+    penguins = sns.load_dataset("penguins")
+
+    # Prepare data
+    data = penguins[penguins['species'] == 'Adelie']
+
+    # Initialize PolyFit instance with bootstrapping
+    poly_fit_with_bootstrap = sor.PolyFit(order=2, gridsize=100, num_bootstrap=200, alpha=0.05)
+
+
+    # Call the PolyFit method on prepared data
+    results_with_bootstrap = poly_fit_with_bootstrap(data, 'bill_length_mm', 'body_mass_g')
+    
+    # Plotting
+    fig, ax = plt.subplots(figsize=(9, 5))
+    sns.scatterplot(x='bill_length_mm', y='body_mass_g', data=data, ax=ax, color='blue', alpha=0.5)
+    ax.plot(results_with_bootstrap['bill_length_mm'], results_with_bootstrap['body_mass_g'], color='darkblue')
+    if 'ci_lower' in results_with_bootstrap.columns and 'ci_upper' in results_with_bootstrap.columns:
+        ax.fill_between(results_with_bootstrap['bill_length_mm'], 
+                        results_with_bootstrap['ci_lower'], 
+                        results_with_bootstrap['ci_upper'], 
+                        color='blue', 
+                        alpha=0.3)
+    ax.set_xlabel('Bill Length (mm)')
+    ax.set_ylabel('Body Mass (g)')
+    ax.set_title('Polynomial Fit with Confidence Intervals for Adelie Penguins')
+    ax.grid(True, which='both', color='gray', linewidth=0.5, linestyle='--')
+    #plt.show()
+    plt.savefig("polyfit_with_ci.png")
+    # Assert that the file was created
+    assert os.path.exists("polyfit_with_ci.png"), "The plot file lowess.png was not created."
