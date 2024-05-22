@@ -19,5 +19,7 @@ from .recipes.lowess import Lowess  # noqa: F401
 
 from .recipes.plotting import PolyFitCI # noqa: F401
 
-__all__ = ['Rolling', 'LineLabel', 'Lowess', 'PolyFitCI']
+from .recipes.plotting import PolyFit # noqa: F401
+
+__all__ = ['Rolling', 'LineLabel', 'Lowess', 'PolyFitCI','PolyFit']
 
