@@ -2,25 +2,21 @@ from __future__ import annotations
 from matplotlib import style
 from dataclasses import dataclass
 import statsmodels.formula.api as smf
-import seaborn.objects as so
-import pandas as pd
-import numpy as np  
+import seaborn.objects as so  
 
 @dataclass
-class PolyFitCI(so.PolyFit):
+class RegressionWithCI(so.PolyFit):
     """
-    Fit a polynomial of the given order and include confidence intervals.
-    Returns a seaborn.objects scatter plot with Dots and a polynomial
-    regression with confidence intervals.
+Returns a seaborn.objects scatter plot with Dots and a linear
+regression with confidence intervals.
 
-    :param alpha: Confidence interval alpha.
-    """
-    alpha: float = 0.05
-
-    def __init__(self, order=1, gridsize=100, alpha=0.05):
+:param alpha: Confidence inteval alpha.
+:param include_dots: Should data points be included in plot?
+"""
+    def __init__(self, order=1, gridsize=100, alpha=0.05, include_dots=True):
         super().__init__(order=order, gridsize=gridsize)
         self.alpha = alpha
-       
+        self.include_dots = include_dots
 
     def fit_and_predict(self, data, yvar, xvar):
         if len(data) < 3:
@@ -28,22 +24,15 @@ class PolyFitCI(so.PolyFit):
         # Filter out missing data and reset index to avoid issues with row indices
         data = data.dropna(subset=[yvar, xvar]).reset_index(drop=True)
         
-        # Construct polynomial formula for the specified order
-        formula = f"{yvar} ~ " + " + ".join([f"np.power({xvar}, {i})" for i in range(1, self.order + 1)])
-        
         # Fit the OLS model
-        model = smf.ols(formula, data=data).fit()
-
-        # Generate grid for predictions
-        x_grid = np.linspace(data[xvar].min(), data[xvar].max(), self.gridsize)
-        pred_data = pd.DataFrame({xvar: x_grid})
+        model = smf.ols(f"{yvar} ~ {xvar}", data=data).fit()
 
         # Get predicted values
-        model_predict = model.get_prediction(pred_data)
-        pred_data[yvar] = model_predict.summary_frame()["mean"]
-        pred_data[["ci_low", "ci_high"]] = model_predict.conf_int(alpha=self.alpha)
-           
-        return pred_data
+        model_predict = model.get_prediction(data[xvar])
+        data["predicted_" + yvar] = model_predict.summary_frame()["mean"]
+        data[["ci_low", "ci_high"]] = model_predict.conf_int(alpha=self.alpha)
+            
+        return data
 
     def plot(self, data, xvar, yvar):
         # Fit model and extend data with predictions and confidence intervals
@@ -52,13 +41,15 @@ class PolyFitCI(so.PolyFit):
         # Initialize plot
         plot = so.Plot(data, x=xvar)
         
+        # Optionally add original data points
+        if self.include_dots:
+            plot = plot.add(so.Dots(), y=yvar)
+        
         # Add regression line and confidence interval band
         plot = (
-            plot.add(so.Lines(), y=yvar)
+            plot.add(so.Lines(), y="predicted_" + yvar)
             .add(so.Band(), ymin="ci_low", ymax="ci_high")
             .theme({**style.library["seaborn-v0_8-whitegrid"]})
         )
         
-        
         return plot
-    

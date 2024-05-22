@@ -17,7 +17,7 @@ from .recipes.line_label import LineLabel  # noqa: F401
 
 from .recipes.lowess import Lowess  # noqa: F401
 
-from .recipes.plotting import PolyFitCI # noqa: F401
+from .recipes.plotting import RegressionWithCI # noqa: F401
 
-__all__ = ['Rolling', 'LineLabel', 'Lowess', 'PolyFitCI']
+__all__ = ['Rolling', 'LineLabel', 'Lowess', 'RegressionWithCI']
 
