@@ -2,9 +2,11 @@ from __future__ import annotations
 from matplotlib import style
 from dataclasses import dataclass
 import statsmodels.formula.api as smf
+from seaborn._stats.base import Stat
 import seaborn.objects as so
 import pandas as pd
 import numpy as np  
+from typing import Optional
 
 @dataclass
 class PolyFitCI(so.PolyFit):
@@ -61,4 +63,62 @@ class PolyFitCI(so.PolyFit):
         
         
         return plot
+
+
+
+@dataclass
+class PolyFit(Stat):
+    """
+    Fit a polynomial of the given order and resample data onto predicted curve
+    including confidence intervals.
+    """
+    alpha: float = 0.05
+    order: int = 2
+    gridsize: int = 100
+    num_bootstrap: Optional[int] = None
+
+    def __post_init__(self):
+        # Type checking for the arguments
+        if not isinstance(self.order, int) or self.order <= 0:
+            raise ValueError("order must be a positive integer.")
+        if not isinstance(self.gridsize, int) or self.gridsize <= 0:
+            raise ValueError("gridsize must be a positive integer.")
+        if self.num_bootstrap is not None and (not isinstance(self.num_bootstrap, int) or self.num_bootstrap <= 0):
+            raise ValueError("num_bootstrap must be a positive integer or None.")
+        if not isinstance(self.alpha, float) or not (0 < self.alpha < 1):
+            raise ValueError("alpha must be a float between 0 and 1.")
+        
+    def _fit_predict(self, data):
+        data = data.dropna(subset=["x", "y"])
+        x = data["x"]
+        y = data["y"]
+        if x.nunique() <= self.order:
+            xx = yy = []
+        else:
+            p = np.polyfit(x, y, self.order)
+            xx = np.linspace(x.min(), x.max(), self.gridsize)
+            yy = np.polyval(p, xx)
+        
+        results = pd.DataFrame(dict(x=xx, y=yy))
+
+        if self.num_bootstrap:
+            bootstrap_estimates = np.empty((self.num_bootstrap, len(xx)))
+            for i in range(self.num_bootstrap):
+                sample = data.sample(frac=1, replace=True)
+                p = np.polyfit(sample["x"], sample["y"], self.order)
+                yy_sample = np.polyval(p, xx)
+                bootstrap_estimates[i, :] = yy_sample
+
+            lower_bound = np.percentile(bootstrap_estimates, (1 - self.alpha) / 2 * 100, axis=0)
+            upper_bound = np.percentile(bootstrap_estimates, (1 + self.alpha) / 2 * 100, axis=0)
+            results["ci_lower"] = lower_bound
+            results["ci_upper"] = upper_bound
+
+        return results
     
+    def __call__(self, data, xvar, yvar):
+        # Rename columns to match expected input for _fit_predict
+        data_renamed = data.rename(columns={xvar: "x", yvar: "y"})
+        #return groupby.apply(data_renamed.dropna(subset=["x", "y"]), self._fit_predict)
+        results = self._fit_predict(data_renamed)
+        return results.rename(columns={"x": xvar, "y": yvar})
