@@ -229,8 +229,7 @@ def test_polyfit_with_ci(cleanup_files):
 
     # Call the PolyFit method on prepared data
     results_with_bootstrap = poly_fit_with_bootstrap(data, 'bill_length_mm', 'body_mass_g')
-    # print(result_no_bootstrap.head())
-
+    
     # Plotting
     fig, ax = plt.subplots(figsize=(9, 5))
     sns.scatterplot(x='bill_length_mm', y='body_mass_g', data=data, ax=ax, color='blue', alpha=0.5)
