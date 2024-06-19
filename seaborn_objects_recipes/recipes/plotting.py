@@ -65,7 +65,6 @@ class PolyFitCI(so.PolyFit):
         return plot
 
 
-
 @dataclass
 class PolyFit(Stat):
     """
@@ -75,7 +74,6 @@ class PolyFit(Stat):
     alpha: float = 0.05
     order: int = 2
     gridsize: int = 100
-    num_bootstrap: Optional[int] = None
 
     def __post_init__(self):
         # Type checking for the arguments
@@ -83,42 +81,48 @@ class PolyFit(Stat):
             raise ValueError("order must be a positive integer.")
         if not isinstance(self.gridsize, int) or self.gridsize <= 0:
             raise ValueError("gridsize must be a positive integer.")
-        if self.num_bootstrap is not None and (not isinstance(self.num_bootstrap, int) or self.num_bootstrap <= 0):
-            raise ValueError("num_bootstrap must be a positive integer or None.")
         if not isinstance(self.alpha, float) or not (0 < self.alpha < 1):
             raise ValueError("alpha must be a float between 0 and 1.")
         
     def _fit_predict(self, data):
         data = data.dropna(subset=["x", "y"])
-        x = data["x"]
-        y = data["y"]
-        if x.nunique() <= self.order:
+        x = data["x"].values
+        y = data["y"].values
+        if x.size <= self.order:
             xx = yy = []
         else:
             p = np.polyfit(x, y, self.order)
             xx = np.linspace(x.min(), x.max(), self.gridsize)
             yy = np.polyval(p, xx)
+            
+            # Calculate confidence intervals
+            # Design matrix
+            X_design = np.vander(xx, self.order + 1)
+            
+            # Calculate standard errors
+            y_hat = np.polyval(p, x)
+            residuals = y - y_hat
+            dof = max(0, len(x) - (self.order + 1))
+            residual_std_error = np.sqrt(np.sum(residuals**2) / dof)
+            
+            # Covariance matrix of coefficients
+            C_matrix = np.linalg.inv(X_design.T @ X_design) * residual_std_error**2
+            
+            # Calculate the standard error for the predicted values
+            y_err = np.sqrt(np.sum((X_design @ C_matrix) * X_design, axis=1))
+            
+            # Calculate the confidence intervals
+            ci = y_err * 1.96  # For approximately 95% CI
+            ci_lower = yy - ci
+            ci_upper = yy + ci
         
-        results = pd.DataFrame(dict(x=xx, y=yy))
-
-        if self.num_bootstrap:
-            bootstrap_estimates = np.empty((self.num_bootstrap, len(xx)))
-            for i in range(self.num_bootstrap):
-                sample = data.sample(frac=1, replace=True)
-                p = np.polyfit(sample["x"], sample["y"], self.order)
-                yy_sample = np.polyval(p, xx)
-                bootstrap_estimates[i, :] = yy_sample
-
-            lower_bound = np.percentile(bootstrap_estimates, (1 - self.alpha) / 2 * 100, axis=0)
-            upper_bound = np.percentile(bootstrap_estimates, (1 + self.alpha) / 2 * 100, axis=0)
-            results["ci_lower"] = lower_bound
-            results["ci_upper"] = upper_bound
+        results = pd.DataFrame(dict(x=xx, y=yy, ci_lower=ci_lower, ci_upper=ci_upper))
 
         return results
     
     def __call__(self, data, xvar, yvar):
         # Rename columns to match expected input for _fit_predict
         data_renamed = data.rename(columns={xvar: "x", yvar: "y"})
-        #return groupby.apply(data_renamed.dropna(subset=["x", "y"]), self._fit_predict)
         results = self._fit_predict(data_renamed)
-        return results.rename(columns={"x": xvar, "y": yvar})
+        return results.rename(columns={"x": xvar, "y": yvar, "ci_lower": "ci_lower", "ci_upper": "ci_upper"})
+
