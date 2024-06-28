@@ -221,29 +221,30 @@ def test_polyfit_with_ci(cleanup_files):
     penguins = sns.load_dataset("penguins")
 
     # Prepare data
-    data = penguins[penguins['species'] == 'Adelie']
+    data = penguins.copy()
+    data = data[data["species"] == "Adelie"]
 
-    # Initialize PolyFit instance with bootstrapping
-    poly_fit_with_bootstrap = sor.PolyFit(order=2, gridsize=100, num_bootstrap=200, alpha=0.05)
-
+    # Initialize PolyFit instance with confidence intervals
+    poly_fit_with_ci = sor.PolyFit(order=2, gridsize=100, alpha=0.05)
 
     # Call the PolyFit method on prepared data
-    results_with_bootstrap = poly_fit_with_bootstrap(data, 'bill_length_mm', 'body_mass_g')
-    
+    results_with_ci = poly_fit_with_ci(data, "bill_length_mm", "body_mass_g")
+
     # Plotting
     fig, ax = plt.subplots(figsize=(9, 5))
-    sns.scatterplot(x='bill_length_mm', y='body_mass_g', data=data, ax=ax, color='blue', alpha=0.5)
-    ax.plot(results_with_bootstrap['bill_length_mm'], results_with_bootstrap['body_mass_g'], color='darkblue')
-    if 'ci_lower' in results_with_bootstrap.columns and 'ci_upper' in results_with_bootstrap.columns:
-        ax.fill_between(results_with_bootstrap['bill_length_mm'], 
-                        results_with_bootstrap['ci_lower'], 
-                        results_with_bootstrap['ci_upper'], 
-                        color='blue', 
-                        alpha=0.3)
-    ax.set_xlabel('Bill Length (mm)')
-    ax.set_ylabel('Body Mass (g)')
-    ax.set_title('Polynomial Fit with Confidence Intervals for Adelie Penguins')
-    ax.grid(True, which='both', color='gray', linewidth=0.5, linestyle='--')
+    sns.scatterplot(x="bill_length_mm", y="body_mass_g", data=data, ax=ax, color="blue", alpha=0.5)
+    ax.plot(results_with_ci["bill_length_mm"], results_with_ci["body_mass_g"], color="darkblue")
+    ax.fill_between(
+        results_with_ci["bill_length_mm"],
+        results_with_ci["ci_lower"],
+        results_with_ci["ci_upper"],
+        color="blue",
+        alpha=0.3,
+    )
+    ax.set_xlabel("Bill Length (mm)")
+    ax.set_ylabel("Body Mass (g)")
+    ax.set_title("Polynomial Fit with Confidence Intervals for Adelie Penguins")
+    ax.grid(True, which="both", color="gray", linewidth=0.5, linestyle="--")
     #plt.show()
     plt.savefig("polyfit_with_ci.png")
     # Assert that the file was created
