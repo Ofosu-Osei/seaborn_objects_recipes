@@ -9,8 +9,7 @@ seaborn_objects_recipes is a Python package that extends the functionality of th
 - [Rolling](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/rolling.py)
 - [LineLabel](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/line_label.py)
 - [Lowess](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/lowess.py)
-- [PolyFitCI](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/plotting.py)
-- [PolyFit](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/plotting.py)
+- [PolyFitWithCI](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/seaborn_objects_recipes/recipes/plotting.py)
 
 ## Installation
 
@@ -37,7 +36,7 @@ Please refer to the [testing file](https://github.com/Ofosu-Osei/seaborn_objects
 ```python
 import seaborn_objets_recipes as sor
 
-def test_line_label(sample_data, cleanup_files):
+def test_line_label(sample_data):
     game = "ExampleGame"
     fd_data = sample_data.query(f'`Game` == "{game}"')
 
@@ -55,15 +54,14 @@ def test_line_label(sample_data, cleanup_files):
         .add(
             so.Lines(),
             so.Agg(),
-            sor.Rolling(window_type="gaussian", window_kwargs={"std": 2}),
+            rolling := sor.Rolling(window_type="gaussian", window_kwargs={"std": 2}),
             legend=False,
         )
-        # This will be much easier when compound marks are implemented.
-        # Will be able to do so.Line() + LineLabel().
+        
         .add(
             sor.LineLabel(offset=5),
             so.Agg(),
-            sor.Rolling(window_type="gaussian", window_kwargs={"std": 2}),
+            rolling,
             legend=False,
         )
         .add(so.Band(), so.Est(errorbar="se"), legend=False)
@@ -81,38 +79,21 @@ def test_line_label(sample_data, cleanup_files):
 ```python
 import seaborn_objets_recipes as sor
 
-def test_lowess():
+def test_lowess_with_ci_gen():
     # Generate data for testing
     np.random.seed(0)
     x = np.linspace(0, 2 * np.pi, 100)
     y = np.sin(x) + np.random.normal(size=100) * 0.2
     data = pd.DataFrame({"x": x, "y": y})
 
-    # Initialize LOWESS instance
-    lowess = sor.Lowess(frac=0.4)
-    # Call the LOWESS method on prepared data
-    results = lowess(data)
-
-    fig, ax = plt.subplots(figsize=(9, 5))
-
-    # Scatter plot of the raw data
-    sns.scatterplot(x="x", y="y", data=data, ax=ax, color="blue", alpha=0.5)
-
-    # LOWESS smoothed line
-    ax.plot(results["x"], results["y"], color="darkblue")
-
-    # Confidence interval shading
-    ax.fill_between(
-        results["x"], results["ci_lower"], results["ci_upper"], color="blue", alpha=0.3
+    # Create the plot
+    plot = (
+        so.Plot(data, x="x", y="y")
+        .add(so.Dot())
+        .add(so.Line(), lowess := sor.Lowess(frac=0.2, gridsize=100, num_bootstrap=200, alpha=0.95))
+        .add(so.Band(), lowess)
+        .label(x="x-axis", y="y-axis", title="Lowess Plot with Confidence Intervals - Generated Data")
     )
-
-    # Customizing plot
-    ax.set_xlabel("x-axis")
-    ax.set_ylabel("y-axis")
-    ax.set_title("LOWESS Smoothing with Confidence Intervals for Generated Data")
-
-    # Add gridlines
-    ax.grid(True, which="both", color="gray", linewidth=0.5, linestyle="--")
     plt.show()
 ```
 
@@ -125,27 +106,23 @@ def test_lowess():
 ```python
 import seaborn_objets_recipes as sor
 
-def test_lowess_with_no_ci():
+def test_lowess_with_no_ci(cleanup_files):
     # Load the penguins dataset
     penguins = sns.load_dataset("penguins")
 
     # Prepare data
     data = penguins[penguins['species'] == 'Adelie']
 
-    # Initialize LOWESS instance (no bootstrapping)
-    lowess_no_bootstrap = sor.Lowess(frac=0.5, gridsize=100)
+   # Create the plot
+    plot = (
+        so.Plot(data, x="bill_length_mm", y="body_mass_g")
+        .add(so.Dot())
+        .add(so.Line(), sor.Lowess())
+        .label(x="Bill Length (mm)", y="Body Mass (g)", title="Lowess Plot no Confidence Intervals")
+    )
+    # Save Plot
+    plt.savefig("lowess_nb.png")
 
-    # Call the LOWESS method on prepared data
-    results_no_bootstrap = lowess_no_bootstrap(data, xvar ='bill_length_mm', yvar='body_mass_g')
-
-    # Plotting
-    fig, ax = plt.subplots(figsize=(9, 5))
-    sns.scatterplot(x='bill_length_mm', y='body_mass_g', data=data, ax=ax, color='blue', alpha=0.5)
-    ax.plot(results_no_bootstrap['bill_length_mm'], results_no_bootstrap['body_mass_g'], color='darkblue')
-    ax.set_xlabel('Bill Length (mm)')
-    ax.set_ylabel('Body Mass (g)')
-    ax.set_title('LOWESS Smoothing for Adelie Penguins (No Bootstrapping)')
-    ax.grid(True, which='both', color='gray', linewidth=0.5, linestyle='--')
     plt.show()
     
 ```
@@ -160,32 +137,20 @@ def test_lowess_with_no_ci():
 import seaborn_objets_recipes as sor
 
 def test_lowess_with_ci():
-     # Load the penguins dataset
+    # Load the penguins dataset
     penguins = sns.load_dataset("penguins")
 
     # Prepare data
     data = penguins[penguins['species'] == 'Adelie']
 
-    # Initialize LOWESS instance with bootstrapping
-    lowess_with_bootstrap = sor.Lowess(frac=0.9, gridsize=100, num_bootstrap=200, alpha=0.95)
-
-    # Call the LOWESS method on prepared data
-    results_with_bootstrap = lowess_with_bootstrap(data, xvar ='bill_length_mm', yvar='body_mass_g')
-
-    # Plotting
-    fig, ax = plt.subplots(figsize=(9, 5))
-    sns.scatterplot(x='bill_length_mm', y='body_mass_g', data=data, ax=ax, color='blue', alpha=0.5)
-    ax.plot(results_with_bootstrap['bill_length_mm'], results_with_bootstrap['body_mass_g'], color='darkblue')
-    ax.fill_between(results_with_bootstrap['bill_length_mm'], 
-                    results_with_bootstrap['ci_lower'], 
-                    results_with_bootstrap['ci_upper'], 
-                    color='blue', 
-                    alpha=0.3
+    # Create the plot
+    plot = (
+        so.Plot(data, x="bill_length_mm", y="body_mass_g")
+        .add(so.Dot())
+        .add(so.Line(), lowess := sor.Lowess(frac=0.2, gridsize=100, num_bootstrap=200, alpha=0.95))
+        .add(so.Band(), lowess)
+        .label(x="Bill Length (mm)", y="Body Mass (g)", title="Lowess Plot with Confidence Intervals")
     )
-    ax.set_xlabel('Bill Length (mm)')
-    ax.set_ylabel('Body Mass (g)')
-    ax.set_title('LOWESS Smoothing with Confidence Intervals for Adelie Penguins')
-    ax.grid(True, which='both', color='gray', linewidth=0.5, linestyle='--')
     plt.show()
     
 ```
@@ -193,36 +158,8 @@ def test_lowess_with_ci():
 ### Output
 ![lowessb](img/lowess_b.png)
 
-### PolyFitCI
 
-```python
-import seaborn_objets_recipes as sor
-
-def test_regression_with_ci(cleanup_files):
-    # Load the penguins dataset
-    penguins = sns.load_dataset("penguins")
-
-    # Create an instance of the class
-    regression_plot = sor.PolyFitCI(order=2, gridsize=100, alpha=0.05)
-
-    plot = regression_plot.plot(
-        penguins[penguins.species == "Adelie"], xvar="bill_length_mm", yvar="body_mass_g"
-    )
-
-    plot = (
-        plot
-        .add(so.Dots(), y="body_mass_g")
-        .label(x="Bill Length (mm)", y="Body Mass (g)")
-    )
-    
-    plot.save("reg_with_ci.png")
-    
-```
-### Output
-
-![regwithci](img/reg_with_ci.png)
-
-### PolyFit
+### PolyFitWithCI
 ```python
 def test_polyfit_with_ci(cleanup_files):
     # Load the penguins dataset
@@ -232,27 +169,14 @@ def test_polyfit_with_ci(cleanup_files):
     data = penguins.copy()
     data = data[data["species"] == "Adelie"]
 
-    # Initialize PolyFit instance with confidence intervals
-    poly_fit_with_ci = sor.PolyFit(order=2, gridsize=100, alpha=0.05)
-
-    # Call the PolyFit method on prepared data
-    results_with_ci = poly_fit_with_ci(data, "bill_length_mm", "body_mass_g")
-
-    # Plotting
-    fig, ax = plt.subplots(figsize=(9, 5))
-    sns.scatterplot(x="bill_length_mm", y="body_mass_g", data=data, ax=ax, color="blue", alpha=0.5)
-    ax.plot(results_with_ci["bill_length_mm"], results_with_ci["body_mass_g"], color="darkblue")
-    ax.fill_between(
-        results_with_ci["bill_length_mm"],
-        results_with_ci["ci_lower"],
-        results_with_ci["ci_upper"],
-        color="blue",
-        alpha=0.3,
+    # Create the plot
+    plot = (
+        so.Plot(data, x="bill_length_mm", y="body_mass_g")
+        .add(so.Dot())
+        .add(so.Line(), PolyFitWithCI := sor.PolyFitWithCI(order=2, gridsize=100, alpha=0.05))
+        .add(so.Band(), PolyFitWithCI)
+        .label(x="Bill Length (mm)", y="Body Mass (g)", title="PolyFit Plot with Confidence Intervals")
     )
-    ax.set_xlabel("Bill Length (mm)")
-    ax.set_ylabel("Body Mass (g)")
-    ax.set_title("Polynomial Fit with Confidence Intervals for Adelie Penguins")
-    ax.grid(True, which="both", color="gray", linewidth=0.5, linestyle="--")
     plt.show()
 ```
 ### Output
