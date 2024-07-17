@@ -29,16 +29,34 @@ pip install seaborn_objects_recipes
 
 ## Usage
 
-Please refer to the [testing file](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/test_main.py) for a comprehensive overview of the testing process. The following sections illustrate the various functionalities available in the seaborn_objects_recipes package.
+For a detailed overview of the usage process, please refer to the [notebook](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/docs/tutorial/recipes_tut.ipynb) fThe following sections demonstrate the various functionalities available in the `seaborn_objects_recipes` package.
 
 ### Rolling & LineLabel
 
 ```python
+import seaborn.objects as so
 import seaborn_objets_recipes as sor
 
-def test_line_label(sample_data):
+def sample_data():
+    # Parameters for simulation
     game = "ExampleGame"
-    fd_data = sample_data.query(f'`Game` == "{game}"')
+    agents = ["Agent1", "Agent2", "Agent3"]
+    num_iterations = 200
+    num_agents = len(agents)
+
+    # Create a simulated DataFrame
+    np.random.seed(0)  # For reproducible results
+    data = {
+        "Game": [game] * num_iterations * num_agents,
+        "Episodic Return": np.random.rand(num_iterations * num_agents) * 100,
+        "Iteration": list(range(num_iterations)) * num_agents,
+        "Agent": np.repeat(agents, num_iterations),
+    }
+
+    return pd.DataFrame(data)
+
+def test_line_label():
+    fd_data = sample_data()
 
     (
         fd_data.pipe(
@@ -64,7 +82,7 @@ def test_line_label(sample_data):
             rolling,
             legend=False,
         )
-        .add(so.Band(), so.Est(errorbar="se"), legend=False)
+        # Display Plot
         .show()
     )
 ```
@@ -77,7 +95,8 @@ def test_line_label(sample_data):
 ### Lowess with Generated Data
 
 ```python
-import seaborn_objets_recipes as sor
+import seaborn.objects as so
+import seaborn_objects_recipes as sor
 
 def test_lowess_with_ci_gen():
     # Generate data for testing
@@ -94,7 +113,8 @@ def test_lowess_with_ci_gen():
         .add(so.Band(), lowess)
         .label(x="x-axis", y="y-axis", title="Lowess Plot with Confidence Intervals - Generated Data")
     )
-    plt.show()
+    # Display Plot
+    plot.show()
 ```
 
 ### Output
@@ -104,13 +124,15 @@ def test_lowess_with_ci_gen():
 ### Lowess with Penguins Dataset - No Booststrapping
 
 ```python
-import seaborn_objets_recipes as sor
+import seaborn.objects as so
+import seaborn_objects_recipes as sor
 
-def test_lowess_with_no_ci(cleanup_files):
+def test_lowess_with_no_ci():
     # Load the penguins dataset
     penguins = sns.load_dataset("penguins")
 
     # Prepare data
+    data = penguins.copy()
     data = penguins[penguins['species'] == 'Adelie']
 
    # Create the plot
@@ -120,10 +142,8 @@ def test_lowess_with_no_ci(cleanup_files):
         .add(so.Line(), sor.Lowess())
         .label(x="Bill Length (mm)", y="Body Mass (g)", title="Lowess Plot no Confidence Intervals")
     )
-    # Save Plot
-    plt.savefig("lowess_nb.png")
-
-    plt.show()
+    # Display Plot
+    plot.show()
     
 ```
 
@@ -134,13 +154,16 @@ def test_lowess_with_no_ci(cleanup_files):
 ### Lowess with Penguins Dataset - Booststrapping
 
 ```python
-import seaborn_objets_recipes as sor
+import seaborn.objects as so
+import seaborn_objects_recipes as sor
 
 def test_lowess_with_ci():
+    
     # Load the penguins dataset
     penguins = sns.load_dataset("penguins")
 
     # Prepare data
+    data = penguins.copy()
     data = penguins[penguins['species'] == 'Adelie']
 
     # Create the plot
@@ -151,7 +174,8 @@ def test_lowess_with_ci():
         .add(so.Band(), lowess)
         .label(x="Bill Length (mm)", y="Body Mass (g)", title="Lowess Plot with Confidence Intervals")
     )
-    plt.show()
+    # Display Plot
+    plot.show()
     
 ```
 
@@ -160,8 +184,13 @@ def test_lowess_with_ci():
 
 
 ### PolyFitWithCI
+
 ```python
-def test_polyfit_with_ci(cleanup_files):
+import seaborn.objects as so
+import seaborn_objects_recipes as sor
+
+def test_polyfit_with_ci():
+    
     # Load the penguins dataset
     penguins = sns.load_dataset("penguins")
 
@@ -177,7 +206,8 @@ def test_polyfit_with_ci(cleanup_files):
         .add(so.Band(), PolyFitWithCI)
         .label(x="Bill Length (mm)", y="Body Mass (g)", title="PolyFit Plot with Confidence Intervals")
     )
-    plt.show()
+    # Display Plot
+    plot.show()
 ```
 ### Output
 
@@ -189,3 +219,9 @@ def test_polyfit_with_ci(cleanup_files):
 For questions or feedback regarding `seaborn_objects_recipes`, please contact [Ofosu Osei](mailto:goofosuosei@gmail.com).
 
 [def]: https://github.com/Ofosu-Osei/seaborn_objects_recipes/actions/workflows/actions.yml
+
+## Reference
+
+* [Rolling, LineLabel](https://github.com/mwaskom/seaborn/discussions/3133)
+
+* [LOWESS Smoother](https://github.com/mwaskom/seaborn/issues/3320)
