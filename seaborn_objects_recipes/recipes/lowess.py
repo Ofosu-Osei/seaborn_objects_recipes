@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 from dataclasses import dataclass
 from seaborn._stats.base import Stat
 import statsmodels.api as sm
@@ -12,7 +13,7 @@ class Lowess(Stat):
     Perform locally-weighted regression (LOWESS) to smooth data.
     This statistical method allows fitting a smooth curve to your data
     using a local regression. It can be useful to visualize the trend of the data.
-    
+
     Parameters
     ----------
     frac : float
@@ -26,11 +27,11 @@ class Lowess(Stat):
         The number of bootstrap samples to use for confidence intervals.
     alpha : float
         Confidence level for the intervals.
-    
+
     Returns
     -------
     pd.DataFrame
-        A Pandas DataFrame with the smoothed curve's 'xvar', 'yvar', 'ci_lower', and 'ci_upper' coordinates.
+        A Pandas DataFrame with the smoothed curve's 'x', 'y', 'ymin', and 'ymax' coordinates.
     """
 
     frac: float = 0.2
@@ -38,16 +39,17 @@ class Lowess(Stat):
     delta: float = 0.0
     num_bootstrap: Optional[int] = None
     alpha: float = 0.95
+    ci: bool = False
 
     def __post_init__(self):
         # Type checking for the arguments
         if not isinstance(self.frac, float) or not (0 < self.frac <= 1):
             raise ValueError("frac must be a float between 0 and 1.")
-        # if not isinstance(self.delta, float) or not (0 < self.delta <= 1):
-        #     raise ValueError("delta must be a float between 0 and 1.")
         if not isinstance(self.gridsize, int) or self.gridsize <= 0:
             raise ValueError("gridsize must be a positive integer.")
-        if self.num_bootstrap is not None and (not isinstance(self.num_bootstrap, int) or self.num_bootstrap <= 0):
+        if self.num_bootstrap is not None and (
+            not isinstance(self.num_bootstrap, int) or self.num_bootstrap <= 0
+        ):
             raise ValueError("num_bootstrap must be a positive integer or None.")
         if not isinstance(self.alpha, float) or not (0 < self.alpha < 1):
             raise ValueError("alpha must be a float between 0 and 1.")
@@ -55,11 +57,8 @@ class Lowess(Stat):
     def _fit_predict(self, data):
         x = data["x"]
         xx = np.linspace(x.min(), x.max(), self.gridsize)
-        result = sm.nonparametric.lowess(endog=data["y"], 
-                                         exog=x, 
-                                         frac=self.frac, 
-                                         delta=self.delta, 
-                                         xvals=xx
+        result = sm.nonparametric.lowess(
+            endog=data["y"], exog=x, frac=self.frac, delta=self.delta, xvals=xx
         )
         if result.ndim == 1:  # Handle single-dimensional return values
             yy = result
@@ -73,34 +72,43 @@ class Lowess(Stat):
 
         for i in range(self.num_bootstrap):
             sample = data.sample(frac=1, replace=True)
-            result = sm.nonparametric.lowess(endog=sample["y"], 
-                                             exog=sample["x"], 
-                                             xvals=xx, 
-                                             frac=self.frac,
-                                             delta=self.delta
+            result = sm.nonparametric.lowess(
+                endog=sample["y"],
+                exog=sample["x"],
+                xvals=xx,
+                frac=self.frac,
+                delta=self.delta,
             )
             # Ensure the result is two-dimensional
             if result.ndim == 1:
-                result = np.column_stack((xx, result))  # Reformat to two-dimensional if needed
+                result = np.column_stack(
+                    (xx, result)
+                )  # Reformat to two-dimensional if needed
             bootstrap_estimates[i, :] = result[:, 1]
 
         return xx, bootstrap_estimates
 
-    def __call__(self, data, xvar, yvar):
-        renamed_data = data.rename(columns={xvar: "x", yvar: "y"})
+    def __call__(self, data: DataFrame, groupby, orient, scales) -> DataFrame:
+        if orient == "x":
+            xvar = data.columns[0]
+            yvar = data.columns[1]
+        else:
+            xvar = data.columns[1]
+            yvar = data.columns[0]
+
+        renamed_data = data.rename(columns={xvar: "x", yvar: "y"})        
         renamed_data = renamed_data.dropna(subset=["x", "y"])
         smoothed = self._fit_predict(renamed_data)
-        
+
         if self.num_bootstrap:
-            xx, bootstrap_estimates = self._bootstrap_resampling(renamed_data)
-            lower_bound = np.percentile(bootstrap_estimates, (1 - self.alpha) / 2 * 100, axis=0)
-            upper_bound = np.percentile(bootstrap_estimates, (1 + self.alpha) / 2 * 100, axis=0)
-            smoothed_b =  pd.DataFrame({
-                'x': xx,
-                'y': smoothed['y'],
-                'ci_lower': lower_bound,
-                'ci_upper': upper_bound
-            })
-            return smoothed_b.rename(columns={"x": xvar, "y": yvar})
-        else:
-            return smoothed.rename(columns={"x": xvar, "y": yvar})
+            xx, bootstrap_estimates = self._bootstrap_resampling(data)
+            lower_bound = np.percentile(
+                bootstrap_estimates, (1 - self.alpha) / 2 * 100, axis=0
+            )
+            upper_bound = np.percentile(
+                bootstrap_estimates, (1 + self.alpha) / 2 * 100, axis=0
+            )
+            smoothed["ymin"] = lower_bound
+            smoothed["ymax"] = upper_bound
+
+        return smoothed
