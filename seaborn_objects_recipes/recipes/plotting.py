@@ -14,6 +14,21 @@ class PolyFitWithCI(Stat):
     """
     Fit a polynomial of the given order and resample data onto predicted curve
     including confidence intervals.
+
+    Parameters
+    ----------
+    alpha : float
+        The confidence level for the intervals.
+    order : int
+        The order of the polynomial to fit. Higher orders can capture more complex relationships.
+    gridsize : int
+        The number of points in the grid to which the polynomial is applied. Higher values result in a smoother curve.
+
+    Returns
+    -------
+    pd.DataFrame
+        A Pandas DataFrame with the predicted curve's 'x', 'y', 'ymin', and 'ymax' coordinates.
+    
     """
     alpha: float = 0.05
     order: int = 2

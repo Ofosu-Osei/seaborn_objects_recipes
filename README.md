@@ -1,4 +1,4 @@
-[![Seaborn CI](https://github.com/Ofosu-Osei/seaborn_objects_recipes/actions/workflows/actions.yml/badge.svg)][def]
+[![Recipes CI](https://github.com/Ofosu-Osei/seaborn_objects_recipes/actions/workflows/actions.yml/badge.svg)][def]
 
 # Seaborn Objects Recipes
 
@@ -13,7 +13,7 @@ seaborn_objects_recipes is a Python package that extends the functionality of th
 
 ## Installation
 
-To install seaborn_objects_recipes, run the following command:
+To install `seaborn_objects_recipes`, run the following command:
 
 ```python
 pip install seaborn_objects_recipes
@@ -27,16 +27,32 @@ pip install seaborn_objects_recipes
 - Statsmodels 0.14.1 or higher
 
 
-## Usage
+## Overview of the Custom Recipes
 
-For a detailed overview of the usage process, please refer to the [notebook](https://github.com/Ofosu-Osei/seaborn_objects_recipes/blob/main/docs/tutorial/recipes_tut.ipynb) fThe following sections demonstrate the various functionalities available in the `seaborn_objects_recipes` package.
+1. **Rolling:** This class provides a method to apply rolling window operations on data, enabling smooth and flexible aggregations such as moving averages.
 
-### Rolling & LineLabel
+2. **LineLabel:** This class facilitates the addition of labels to lines in your plots, improving readability and providing additional context directly on the graph.
+
+3. **Lowess:** The Locally Weighted Scatterplot Smoothing (LOWESS) class allows for the fitting of smooth curves to data using local regression, which is particularly useful for visualizing trends in noisy datasets. It also includes options to compute confidence intervals using bootstrapping.
+
+4. **PolyFitWithCI:** This class fits polynomial curves to your data and includes functionality to calculate and visualize confidence intervals, providing a robust method for polynomial regression analysis.
+
+## Usage Examples
+
+### Rolling Averages and Line Labels
+
+In this example, we will generate a simulated dataset and create a plot that demonstrates the use of rolling averages and line labels. The dataset simulates the performance of three agents over multiple iterations in a game. We will use the `Rolling` and `LineLabel` classes from the `seaborn_objects_recipes` package to enhance the visualization.
 
 ```python
 import seaborn.objects as so
 import seaborn_objets_recipes as sor
+import numpy as np
+```
 
+### Generating Simulated Data
+First, we define a function `sample_data()` to generate a DataFrame with simulated data. The data includes the episodic returns of three agents over 200 iterations in a game called "ExampleGame".
+
+```Python
 def sample_data():
     # Parameters for simulation
     game = "ExampleGame"
@@ -54,7 +70,12 @@ def sample_data():
     }
 
     return pd.DataFrame(data)
+```
 
+### Creating the Plot
+Next, we use the seaborn.objects interface to create a plot that includes rolling averages and line labels. We utilize the `Rolling` class to apply a Gaussian rolling average and the `LineLabel` class to add informative labels to the lines.
+
+```python
 def test_line_label():
     fd_data = sample_data()
 
@@ -92,11 +113,30 @@ def test_line_label():
 ![fimage](img/line_label.png)
 
 
+### Lowess
+
+The `Lowess` recipe in the `seaborn_objects_recipes` package provides a method for locally-weighted regression, also known as LOWESS. This technique is useful for smoothing data and visualizing trends in a dataset. LOWESS is particularly effective for non-linear data and helps in identifying patterns without assuming a specific functional form.
+
+**Key Features:**
+
+Locally-Weighted Regression: Fit a smooth curve to your data using a local regression technique.
+Customizable Smoothing: Control the fraction of data points used for each local regression to adjust the smoothness of the curve.
+Confidence Intervals: Optionally compute bootstrap confidence intervals to visualize the uncertainty in the smoothed curve.
+
+**Parameters:**
+
+* **frac:** The fraction of data used when estimating each y-value. A smaller value results in more local smoothing.
+* **gridsize:** The number of points in the grid to which the LOWESS is applied. Higher values result in a smoother curve.
+* **delta:** Distance within which to use linear interpolation instead of weighted regression.
+* **num_bootstrap:** The number of bootstrap samples to use for computing confidence intervals.
+* **alpha:*** The confidence level for the intervals.
+
 ### Lowess with Generated Data
 
 ```python
 import seaborn.objects as so
 import seaborn_objects_recipes as sor
+import numpy as np
 
 def test_lowess_with_ci_gen():
     # Generate data for testing
@@ -125,6 +165,7 @@ def test_lowess_with_ci_gen():
 
 ```python
 import seaborn.objects as so
+import seaborn as sns
 import seaborn_objects_recipes as sor
 
 def test_lowess_with_no_ci():
@@ -155,6 +196,7 @@ def test_lowess_with_no_ci():
 
 ```python
 import seaborn.objects as so
+import seaborn as sns
 import seaborn_objects_recipes as sor
 
 def test_lowess_with_ci():
@@ -184,9 +226,22 @@ def test_lowess_with_ci():
 
 
 ### PolyFitWithCI
+The `PolyFitWithCI` recipe in the `seaborn_objects_recipes` package provides a method for fitting polynomial regression models to data, including confidence intervals. Polynomial regression is useful for capturing non-linear relationships between variables, and adding confidence intervals helps visualize the uncertainty around the fitted polynomial curve.
+
+**Key Features:**
+* **Polynomial Regression:** Fit a polynomial of a specified order to your data.
+* **Customizable Order:** Control the order of the polynomial to capture different degrees of non-linearity.
+* **Confidence Intervals:** Compute and visualize confidence intervals around the fitted polynomial curve.
+
+**Parameters:**
+* **order:** The order of the polynomial to fit. Higher orders can capture more complex relationships but may overfit the data.
+* **gridsize:** The number of points in the grid to which the polynomial is applied. Higher values result in a smoother curve.
+* **alpha:** The confidence level for the intervals.
+
 
 ```python
 import seaborn.objects as so
+import seaborn as sns
 import seaborn_objects_recipes as sor
 
 def test_polyfit_with_ci():
@@ -220,7 +275,7 @@ For questions or feedback regarding `seaborn_objects_recipes`, please contact [O
 
 [def]: https://github.com/Ofosu-Osei/seaborn_objects_recipes/actions/workflows/actions.yml
 
-## Reference
+## Credits
 
 * [Rolling, LineLabel](https://github.com/mwaskom/seaborn/discussions/3133)
 

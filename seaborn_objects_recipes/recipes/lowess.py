@@ -39,7 +39,7 @@ class Lowess(Stat):
     delta: float = 0.0
     num_bootstrap: Optional[int] = None
     alpha: float = 0.95
-    ci: bool = False
+    
 
     def __post_init__(self):
         # Type checking for the arguments
