@@ -48,7 +48,6 @@ def cleanup_files():
 # Use the sample_data fixture to provide data to the test function
 # and the cleanup_files fixture to clean up after the test
 def test_line_label(sample_data, cleanup_files):
-    # theme = "darkgrid"
     game = "ExampleGame"
     fd_data = sample_data.query(f'`Game` == "{game}"')
 
@@ -78,7 +77,6 @@ def test_line_label(sample_data, cleanup_files):
             rolling,
             legend=False,
         )
-        .add(so.Band(), so.Est(errorbar="se"), legend=False)
         .save("line_label.png")
         #.show()
     )
