@@ -129,7 +129,7 @@ Confidence Intervals: Optionally compute bootstrap confidence intervals to visua
 * **gridsize:** The number of points in the grid to which the LOWESS is applied. Higher values result in a smoother curve.
 * **delta:** Distance within which to use linear interpolation instead of weighted regression.
 * **num_bootstrap:** The number of bootstrap samples to use for computing confidence intervals.
-* **alpha:*** The confidence level for the intervals.
+* **alpha:** The confidence level for the intervals.
 
 ### Lowess with Generated Data
 
@@ -277,6 +277,6 @@ For questions or feedback regarding `seaborn_objects_recipes`, please contact [O
 
 ## Credits
 
-* [Rolling, LineLabel](https://github.com/mwaskom/seaborn/discussions/3133)
+* @JesseFarebro [Rolling, LineLabel](https://github.com/mwaskom/seaborn/discussions/3133)
 
-* [LOWESS Smoother](https://github.com/mwaskom/seaborn/issues/3320)
+* @tbpassin and @kcarnold [LOWESS Smoother](https://github.com/mwaskom/seaborn/issues/3320)
