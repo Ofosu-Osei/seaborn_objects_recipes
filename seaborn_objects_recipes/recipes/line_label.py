@@ -19,6 +19,35 @@ from seaborn._marks.base import (
 
 @dataclasses.dataclass
 class LineLabel(so.Mark):
+    """
+    Add text labels to lines in a plot for direct identification.
+
+    The `LineLabel` class provides a method to add text labels directly to lines
+    in a plot. This is particularly useful for plots with multiple lines, where
+    identifying each line using a legend might not be sufficient or could clutter the plot.
+
+    Parameters
+    ----------
+    text : MappableString, default=""
+        The text to display as a label. It can be a string or a column in the data.
+    color : MappableColor, default="k"
+        The color of the text label.
+    alpha : MappableFloat, default=1
+        The transparency level of the text label.
+    fontsize : MappableFloat, default=rc["font.size"]
+        The font size of the text label.
+    offset : float, default=4
+        The distance to offset the text label from the line, in points.
+    additional_distance_offset : float, default=0
+        Additional distance to separate overlapping labels, in points.
+
+    Methods
+    -------
+    _compute_target_positions(data, scales, other, *, offset=0)
+        Solves a constrained optimization problem to determine the optimal target point positions for labels.
+    _plot(split_gen, scales, orient)
+        Adds text labels to the plot at computed positions.
+    """
     text: MappableString = Mappable("")
     color: MappableColor = Mappable("k")
     alpha: MappableFloat = Mappable(1)
