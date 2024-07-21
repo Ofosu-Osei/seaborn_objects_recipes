@@ -277,6 +277,6 @@ For questions or feedback regarding `seaborn_objects_recipes`, please contact [O
 
 ## Credits
 
-* @JesseFarebro [Rolling, LineLabel](https://github.com/mwaskom/seaborn/discussions/3133)
+* Special thanks to [@JesseFarebro](https://github.com/JesseFarebro) for [Rolling, LineLabel](https://github.com/mwaskom/seaborn/discussions/3133)
 
-* @tbpassin and @kcarnold [LOWESS Smoother](https://github.com/mwaskom/seaborn/issues/3320)
+* Special thanks to [@tbpassin](https://github.com/tbpassin) and [@kcarnold](https://github.com/kcarnold) for [LOWESS Smoother](https://github.com/mwaskom/seaborn/issues/3320)
