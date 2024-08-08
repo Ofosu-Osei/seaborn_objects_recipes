@@ -46,6 +46,7 @@ In this example, we will generate a simulated dataset and create a plot that dem
 ```python
 import seaborn.objects as so
 import seaborn_objets_recipes as sor
+import pandas as pd
 import numpy as np
 ```
 
@@ -77,10 +78,10 @@ Next, we use the seaborn.objects interface to create a plot that includes rollin
 
 ```python
 def test_line_label():
-    fd_data = sample_data()
+    data = sample_data()
 
     (
-        fd_data.pipe(
+        data.pipe(
             so.Plot, y="Episodic Return", x="Iteration", color="Agent", text="Agent"
         )
         .layout(size=(16, 8))
@@ -119,9 +120,9 @@ The `Lowess` recipe in the `seaborn_objects_recipes` package provides a method f
 
 **Key Features:**
 
-Locally-Weighted Regression: Fit a smooth curve to your data using a local regression technique.
-Customizable Smoothing: Control the fraction of data points used for each local regression to adjust the smoothness of the curve.
-Confidence Intervals: Optionally compute bootstrap confidence intervals to visualize the uncertainty in the smoothed curve.
+* **Locally-Weighted Regression:** Fit a smooth curve to your data using a local regression technique.
+* **Customizable Smoothing:** Control the fraction of data points used for each local regression to adjust the smoothness of the curve.
+* **Confidence Intervals:** Optionally compute bootstrap confidence intervals to visualize the uncertainty in the smoothed curve.
 
 **Parameters:**
 
@@ -136,6 +137,7 @@ Confidence Intervals: Optionally compute bootstrap confidence intervals to visua
 ```python
 import seaborn.objects as so
 import seaborn_objects_recipes as sor
+import pandas as pd
 import numpy as np
 
 def test_lowess_with_ci_gen():
@@ -268,6 +270,9 @@ def test_polyfit_with_ci():
 
 ![regwithci](img/polyfit_with_ci.png)
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Contact
 
