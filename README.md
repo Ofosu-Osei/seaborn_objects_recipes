@@ -213,7 +213,7 @@ def test_lowess_with_ci():
     plot = (
         so.Plot(data, x="bill_length_mm", y="body_mass_g", color="species")
         .add(so.Dot())
-        .add(so.Line(), lowess := Lowess(frac=0.2, gridsize=100, num_bootstrap=200, alpha=0.95))
+        .add(so.Line(), lowess := sor.Lowess(frac=0.2, gridsize=100, num_bootstrap=200, alpha=0.95))
         .add(so.Band(), lowess)
         .label(x="Bill Length (mm)", y="Body Mass (g)", title="Lowess Plot with Confidence Intervals")
     )
