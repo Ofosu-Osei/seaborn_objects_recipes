@@ -1,11 +1,11 @@
 from __future__ import annotations
 import numpy as np
 import pandas as pd
-from pandas import DataFrame
 from dataclasses import dataclass
 from seaborn._stats.base import Stat
 import statsmodels.api as sm
 from typing import Optional
+
 
 @dataclass
 class Lowess(Stat):
@@ -39,7 +39,6 @@ class Lowess(Stat):
     delta: float = 0.0
     num_bootstrap: Optional[int] = None
     alpha: float = 0.95
-    
 
     def __post_init__(self):
         # Type checking for the arguments
@@ -47,9 +46,7 @@ class Lowess(Stat):
             raise ValueError("frac must be a float between 0 and 1.")
         if not isinstance(self.gridsize, int) or self.gridsize <= 0:
             raise ValueError("gridsize must be a positive integer.")
-        if self.num_bootstrap is not None and (
-            not isinstance(self.num_bootstrap, int) or self.num_bootstrap <= 0
-        ):
+        if self.num_bootstrap is not None and (not isinstance(self.num_bootstrap, int) or self.num_bootstrap <= 0):
             raise ValueError("num_bootstrap must be a positive integer or None.")
         if not isinstance(self.alpha, float) or not (0 < self.alpha < 1):
             raise ValueError("alpha must be a float between 0 and 1.")
@@ -57,16 +54,14 @@ class Lowess(Stat):
     def _fit_predict(self, data):
         x = data["x"]
         xx = np.linspace(x.min(), x.max(), self.gridsize)
-        result = sm.nonparametric.lowess(
-            endog=data["y"], exog=x, frac=self.frac, delta=self.delta, xvals=xx
-        )
+        result = sm.nonparametric.lowess(endog=data["y"], exog=x, frac=self.frac, delta=self.delta, xvals=xx)
         if result.ndim == 1:  # Handle single-dimensional return values
             yy = result
         else:
             yy = result[:, 1]  # Select the predicted y-values
         return pd.DataFrame(dict(x=xx, y=yy))
 
-    def _bootstrap_resampling(self, data):
+    def _bootstrap_resampling(self, data) -> pd.DataFrame:
         xx = np.linspace(data["x"].min(), data["x"].max(), self.gridsize)
         bootstrap_estimates = np.empty((self.num_bootstrap, len(xx)))
 
@@ -81,14 +76,15 @@ class Lowess(Stat):
             )
             # Ensure the result is two-dimensional
             if result.ndim == 1:
-                result = np.column_stack(
-                    (xx, result)
-                )  # Reformat to two-dimensional if needed
+                result = np.column_stack((xx, result))  # Reformat to two-dimensional if needed
             bootstrap_estimates[i, :] = result[:, 1]
 
-        return xx, bootstrap_estimates
+        lower_bound = np.percentile(bootstrap_estimates, (1 - self.alpha) / 2 * 100, axis=0)
+        upper_bound = np.percentile(bootstrap_estimates, (1 + self.alpha) / 2 * 100, axis=0)
 
-    def __call__(self, data: DataFrame, groupby, orient, scales) -> DataFrame:
+        return pd.DataFrame({"ymin": lower_bound, "ymax": upper_bound})
+
+    def __call__(self, data: pd.DataFrame, groupby, orient, scales) -> pd.DataFrame:
         if orient == "x":
             xvar = data.columns[0]
             yvar = data.columns[1]
@@ -96,19 +92,23 @@ class Lowess(Stat):
             xvar = data.columns[1]
             yvar = data.columns[0]
 
-        renamed_data = data.rename(columns={xvar: "x", yvar: "y"})        
+        renamed_data = data.rename(columns={xvar: "x", yvar: "y"})
         renamed_data = renamed_data.dropna(subset=["x", "y"])
         smoothed = self._fit_predict(renamed_data)
 
-        if self.num_bootstrap:
-            xx, bootstrap_estimates = self._bootstrap_resampling(data)
-            lower_bound = np.percentile(
-                bootstrap_estimates, (1 - self.alpha) / 2 * 100, axis=0
-            )
-            upper_bound = np.percentile(
-                bootstrap_estimates, (1 + self.alpha) / 2 * 100, axis=0
-            )
-            smoothed["ymin"] = lower_bound
-            smoothed["ymax"] = upper_bound
+        grouping_vars = [str(v) for v in data if v in groupby.order]
 
-        return smoothed
+        if not grouping_vars:
+            # If no grouping variables, directly fit and predict
+            smoothed = self._fit_predict(renamed_data)
+        else:
+            # Apply the fit_predict method for each group separately
+            smoothed = groupby.apply(renamed_data, self._fit_predict)
+
+        if self.num_bootstrap:
+            if not grouping_vars:
+                bootstrap_estimates = self._bootstrap_resampling(data)
+            else:
+                bootstrap_estimates = groupby.apply(data, self._bootstrap_resampling)
+
+        return smoothed.join(bootstrap_estimates[["ymin", "ymax"]]) if self.num_bootstrap else smoothed

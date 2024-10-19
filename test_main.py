@@ -113,12 +113,9 @@ def test_lowess_with_ci(cleanup_files):
     # Load the penguins dataset
     penguins = sns.load_dataset("penguins")
 
-    # Prepare data
-    data = penguins[penguins['species'] == 'Adelie']
-
     # Create the plot
     plot = (
-        so.Plot(data, x="bill_length_mm", y="body_mass_g")
+        so.Plot(penguins, x="bill_length_mm", y="body_mass_g", color="species")
         .add(so.Dot())
         .add(so.Line(), lowess := sor.Lowess(frac=0.2, gridsize=100, num_bootstrap=200, alpha=0.95))
         .add(so.Band(), lowess)
